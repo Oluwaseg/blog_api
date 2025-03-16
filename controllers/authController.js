@@ -258,7 +258,7 @@ const forgotPassword = async (req, res) => {
       subject: 'Password Reset',
       html: `<p>You are receiving this email because you (or someone else) has requested the reset of the password for your account.</p>
             <p>Please click on the following link to reset your password. If you did not request this, please ignore this email and your password will remain unchanged.</p>
-            <p><a href="${process.env.CLIENT_URL}/api/reset-password/${token}">Reset Password</a></p>`,
+            <p><a href="${process.env.CLIENT_URL}/reset-password?token=${token}">Reset Password</a></p>`,
     };
 
     transporter.sendMail(mailOptions, (error, info) => {
@@ -290,11 +290,7 @@ const forgotPassword = async (req, res) => {
 const resetPassword = async (req, res) => {
   try {
     const { token, password } = req.body;
-
-    console.log('Received token:', token);
     const decodedToken = jwt.verify(token, process.env.RESET_PASSWORD_SECRET);
-
-    console.log('Decoded token:', decodedToken);
     const user = await User.findOne({ email: decodedToken.email });
 
     if (!user) {
