@@ -98,14 +98,15 @@ const createToken = (user) => {
 // Google OAuth callback route
 router.get(
   '/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: '/api/login' }),
+  passport.authenticate('google', {
+    failureRedirect: `${process.env.CLIENT_URL}/login`,
+  }),
   async (req, res) => {
     try {
       const token = createToken(req.user);
-      req.user.tokens.push(token);
-      await req.user.save();
-      res.cookie('jwt', token, { httpOnly: true });
-      res.json({ success: true, token });
+
+      // Redirect to frontend with token in URL
+      res.redirect(`${process.env.CLIENT_URL}/oauth-callback?token=${token}`);
     } catch (error) {
       res.status(500).json({ error: 'Internal Server Error' });
     }
