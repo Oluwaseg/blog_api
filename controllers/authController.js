@@ -23,7 +23,7 @@ const createToken = (user) => {
 
 // verify email
 const sendVerificationEmail = (email, token) => {
-  const verificationLink = `${process.env.CLIENT_URL}/api/verify-email?token=${token}`;
+  const verificationLink = `${process.env.CLIENT_URL}/verify-email?token=${token}`;
 
   // Send email with verification link
   const transporter = nodemailer.createTransport({
@@ -93,12 +93,10 @@ const registerUser = async (req, res) => {
     }
 
     if (password.length < 6) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: 'Password must be at least 6 characters long',
-        });
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long',
+      });
     }
 
     const existingUser = await User.findOne({ email });
