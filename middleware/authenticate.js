@@ -1,52 +1,49 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models/model');
 
-const authenticateToken = async (req, res, next) => {
-  const token = req.cookies.jwt;
+const authenticateToken =
+  (strict = true) =>
+  async (req, res, next) => {
+    const token = req.cookies.jwt || req.headers.authorization?.split(' ')[1];
 
-  if (!token) {
-    return res.status(401).json({ error: 'Unauthorized: No token provided' });
-  }
-
-  try {
-    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decodedToken.userId);
-
-    if (!user) {
-      return res.status(401).json({ error: 'Unauthorized: User not found' });
+    if (!token) {
+      if (strict) {
+        return res
+          .status(401)
+          .json({ error: 'Unauthorized: No token provided' });
+      } else {
+        return next(); // Allow access without a token in public routes
+      }
     }
 
-    req.user = user;
-    req.session.userId = user._id;
-    next();
-  } catch (error) {
-    console.error('Error verifying token:', error);
-    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
-  }
-};
+    try {
+      const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decodedToken.userId);
 
-// Less Strict Authentication Middleware
-const authenticateTokenPublic = async (req, res, next) => {
-  const token = req.cookies.jwt;
+      if (!user) {
+        if (strict) {
+          return res
+            .status(401)
+            .json({ error: 'Unauthorized: User not found' });
+        } else {
+          return next();
+        }
+      }
 
-  if (!token) {
-    return next();
-  }
-
-  try {
-    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decodedToken.userId);
-
-    if (user) {
       req.user = user;
       req.session.userId = user._id;
+    } catch (error) {
+      console.error('Error verifying token:', error);
+      if (strict) {
+        return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+      }
     }
-  } catch (error) {
-    console.error('Error verifying token:', error);
-  }
 
-  next();
-};
+    next();
+  };
+
+const authenticate = authenticateToken(true); // Strict authentication (required)
+const authenticatePublic = authenticateToken(false);
 
 const checkSessionExpiration = (req, res, next) => {
   if (!req.session || !req.session.userId) {
@@ -83,8 +80,8 @@ const verifyEmail = async (req, res) => {
 };
 
 module.exports = {
-  authenticateToken,
+  authenticate,
   checkSessionExpiration,
-  authenticateTokenPublic,
+  authenticatePublic,
   verifyEmail,
 };
