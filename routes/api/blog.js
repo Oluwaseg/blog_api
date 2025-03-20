@@ -1,27 +1,25 @@
 const blogController = require('../../controllers/blogController');
 const {
-  authenticateToken,
+  authenticate,
   checkSessionExpiration,
-  authenticateTokenPublic,
+  authenticatePublic,
 } = require('../../middleware/authenticate');
-
 const { blogUpload } = require('../../middleware/image.config');
 
 const express = require('express');
 const router = express.Router();
 
 // Define CRUD routes
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
   try {
-    const blogsData = await blogController.getAllBlogs();
-    res.json(blogsData);
+    await blogController.getAllBlogs(req, res);
   } catch (error) {
     console.error('Error getting blogs:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
-router.get('/categories', authenticateTokenPublic, async (req, res) => {
+router.get('/categories', authenticatePublic, async (req, res) => {
   try {
     let blogsByCategory = await blogController.getBlogsGroupedByCategory();
     res.json({ blogsByCategory });
@@ -33,7 +31,7 @@ router.get('/categories', authenticateTokenPublic, async (req, res) => {
 
 router.post(
   '/create',
-  authenticateToken,
+  authenticate,
   checkSessionExpiration,
   blogUpload.single('image'),
   blogController.createBlog
@@ -41,28 +39,28 @@ router.post(
 
 router.post(
   '/:blogId/comment',
-  authenticateToken,
+  authenticate,
   checkSessionExpiration,
   blogController.addCommentToBlog
 );
 
 router.delete(
   '/:id',
-  authenticateToken,
+  authenticate,
   checkSessionExpiration,
   blogController.deleteBlog
 );
 
 router.delete(
   '/comment/:commentId',
-  authenticateToken,
+  authenticate,
   checkSessionExpiration,
   blogController.deleteComment
 );
 
 router.delete(
   '/:slug/comment/:commentId/delete-reply/:replyId',
-  authenticateToken,
+  authenticate,
   checkSessionExpiration,
   blogController.deleteReply
 );
@@ -71,48 +69,63 @@ router.post('/:commentId/edit', blogController.editComment);
 
 router.post(
   '/:slug/comment/:commentId/react',
-  authenticateToken,
+  authenticate,
   checkSessionExpiration,
   blogController.addReactionToComment
 );
 
 router.post(
   '/:slug/react',
-  authenticateToken,
+  authenticate,
   checkSessionExpiration,
   blogController.addReactionToBlog
 );
 
 router.post(
   '/:slug/comment/:commentId/edit-reply/:replyId',
-  authenticateToken,
+  authenticate,
   checkSessionExpiration,
   blogController.updateReply
 );
 
 router.post(
   '/comment/:commentId/reply',
-  authenticateToken,
+  authenticate,
   checkSessionExpiration,
   blogController.replyToComment
 );
 
 router.get('/edit-comment/:commentId', blogController.getEditComment);
 
-router.get('/:slug', authenticateTokenPublic, blogController.getBlogBySlug);
+router.get('/:slug', authenticatePublic, blogController.getBlogBySlug);
 
 router.get(
   '/:slug/edit',
-  authenticateToken,
+  authenticate,
   checkSessionExpiration,
   blogController.getBlogForEdit
 );
 
 router.put(
   '/:slug/edit',
-  authenticateToken,
+  authenticate,
   checkSessionExpiration,
+  blogUpload.single('image'),
   blogController.updateBlog
+);
+
+router.post(
+  '/reply/:replyId/react',
+  authenticate,
+  checkSessionExpiration,
+  blogController.addReactionToReply
+);
+
+router.get(
+  '/:slug/comment/:commentId/edit-reply/:replyId',
+  authenticate,
+  checkSessionExpiration,
+  blogController.getEditReply
 );
 
 module.exports = router;

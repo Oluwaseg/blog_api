@@ -5,7 +5,7 @@ const { User } = require('../../models/model');
 const jwt = require('jsonwebtoken');
 const authController = require('../../controllers/authController');
 const {
-  authenticateToken,
+  authenticate,
   checkSessionExpiration,
   verifyEmail,
 } = require('../../middleware/authenticate');
@@ -124,26 +124,22 @@ router.post('/resend-verification', async (req, res) => {
   const result = await authController.resendVerificationEmail(email);
   res.json(result);
 });
-router.post(
-  '/update-password',
-  authenticateToken,
-  authController.updatePassword
-);
+router.post('/update-password', authenticate, authController.updatePassword);
 router.post(
   '/change-profile-picture',
-  authenticateToken,
+  authenticate,
   upload.single('image'),
   authController.changeProfilePicture
 );
 router.post(
   '/update-details',
-  authenticateToken,
+  authenticate,
   checkSessionExpiration,
   authController.updateUserDetails
 );
 
 router.get('/verify-email', verifyEmail);
-router.get('/getImageUrl', authenticateToken, (req, res) => {
+router.get('/getImageUrl', authenticate, (req, res) => {
   res.json({ imageUrl: req.user.image });
 });
 
