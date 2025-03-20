@@ -6,7 +6,7 @@ const logger = require('morgan');
 const session = require('express-session');
 const cors = require('cors');
 const methodOverride = require('method-override');
-const { authenticateTokenPublic } = require('./middleware/authenticate');
+const { authenticatePublic } = require('./middleware/authenticate');
 const blogController = require('./controllers/blogController');
 const authRouter = require('./routes/api/auth');
 const blogRouter = require('./routes/api/blog');
@@ -21,7 +21,7 @@ connectDB();
 
 app.use(logger('dev'));
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json());
 app.use(express.urlencoded({ limit: '50mb', extended: false }));
 app.use(cookieParser());
 app.use(methodOverride('_method'));
@@ -47,7 +47,7 @@ app.use(session(sessionOptions));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
-app.get('/', authenticateTokenPublic, async (req, res) => {
+app.get('/', authenticatePublic, async (req, res) => {
   try {
     const { blogs, randomBlogByCategory, blogsByCategory } =
       await blogController.getAllBlogs();
@@ -59,7 +59,7 @@ app.get('/', authenticateTokenPublic, async (req, res) => {
 });
 
 app.use('/api', authRouter);
-app.use('/blog', blogRouter);
+app.use('/api/blogs', blogRouter);
 
 // Middleware to handle 404 errors
 app.use((req, res, next) => {

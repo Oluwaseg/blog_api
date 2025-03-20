@@ -16,7 +16,7 @@ const createToken = (user) => {
     image: user.image,
   };
 
-  const token = jwt.sign(tokenData, secretKey, { expiresIn: '30m' });
+  const token = jwt.sign(tokenData, secretKey, { expiresIn: '1hr' });
 
   return token;
 };

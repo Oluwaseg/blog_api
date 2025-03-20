@@ -3,15 +3,31 @@ const { JSDOM } = require('jsdom');
 const dompurify = require('dompurify');
 const { window } = new JSDOM('');
 const { sanitize } = dompurify(window);
+const cloudinary = require('cloudinary').v2;
 
 // ! BLOG CRUD LOGIC
 
 // Get all blogs
 const getAllBlogs = async (req, res) => {
   try {
-    const blogs = await Blog.find().populate('author', 'name username image');
-    const randomBlogByCategory = await getRandomBlogsByCategory();
-    const blogsByCategory = await getBlogsGroupedByCategory();
+    const blogs = await Blog.find()
+      .sort({ createdAt: -1 })
+      .populate('author', 'name username image')
+      .exec();
+
+    let randomBlogByCategory = {};
+    try {
+      randomBlogByCategory = await getRandomBlogsByCategory();
+    } catch (error) {
+      console.error('Error fetching random blogs:', error);
+    }
+
+    let blogsByCategory = {};
+    try {
+      blogsByCategory = await getBlogsGroupedByCategory();
+    } catch (error) {
+      console.error('Error fetching blogs by category:', error);
+    }
 
     return res.status(200).json({
       success: true,
@@ -22,7 +38,7 @@ const getAllBlogs = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error getting blogs:', error);
+    console.error('Error getting blogs:', error.stack);
     return res.status(500).json({
       success: false,
       message: 'Internal Server Error',
@@ -287,7 +303,14 @@ const getBlogForEdit = async (req, res) => {
 
 const updateBlog = async (req, res) => {
   try {
-    const { title, description, content, category, tags } = req.body;
+    const { title, description, content, category, tags, removeImage } =
+      req.body;
+    const blog = await Blog.findOne({ slug: req.params.slug });
+    if (!blog) {
+      return res
+        .status(404)
+        .json({ success: false, message: 'Blog Not Found' });
+    }
 
     const updateData = {};
     if (title) updateData.title = title;
@@ -296,29 +319,36 @@ const updateBlog = async (req, res) => {
     if (category) updateData.category = category;
     if (tags) updateData.tags = tags.split(',').map((tag) => tag.trim());
 
+    // Remove old image if requested or if a new one is uploaded
+    if (removeImage === 'true' || req.file) {
+      if (blog.image) {
+        // Extract public ID from Cloudinary URL
+        const publicId = blog.image.split('/').pop().split('.')[0];
+        await cloudinary.uploader.destroy(
+          `blog-folder/blog-images/${publicId}`
+        );
+        updateData.image = req.file ? req.file.path : '';
+      }
+    }
+
+    // Set new image if uploaded
     if (req.file) {
       updateData.image = req.file.path;
     }
 
-    const blog = await Blog.findOneAndUpdate(
+    const updatedBlog = await Blog.findOneAndUpdate(
       { slug: req.params.slug },
       updateData,
       { new: true }
     );
 
-    if (!blog) {
-      return res.status(404).json({
-        success: false,
-        message: 'Blog Not Found',
-      });
-    }
-
     return res.status(200).json({
       success: true,
       message: 'Blog updated successfully',
-      data: blog,
+      data: updatedBlog,
     });
   } catch (error) {
+    console.error('Error updating blog:', error);
     return res.status(500).json({
       success: false,
       message: 'Internal Server Error',
@@ -327,7 +357,6 @@ const updateBlog = async (req, res) => {
   }
 };
 
-// Delete a blog by ID
 const deleteBlog = async (req, res) => {
   try {
     const blog = await Blog.findByIdAndDelete(req.params.id);
