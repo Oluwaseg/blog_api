@@ -94,12 +94,9 @@ const getRandomBlogsByCategory = async (currentCategory) => {
     const categories = await Blog.distinct('category');
     const blogsByCategory = {};
 
-    // Array to keep track of selected categories
     const selectedCategories = [];
 
     for (const category of categories) {
-      // If the current category is provided and matches the loop category,
-      // or if the category has already been selected, skip this iteration
       if (
         (currentCategory && category === currentCategory) ||
         selectedCategories.includes(category)
@@ -120,14 +117,13 @@ const getRandomBlogsByCategory = async (currentCategory) => {
 
       blogsByCategory[category] = blogs;
 
-      // Add the selected category to the array
       selectedCategories.push(category);
     }
 
     return blogsByCategory;
   } catch (error) {
     console.error('Error getting random blogs by category:', error);
-    throw error; // Rethrow the error to handle it elsewhere if needed
+    throw error;
   }
 };
 
@@ -148,8 +144,7 @@ const createBlog = async (req, res) => {
 
     let image;
     if (req.file) {
-      // Check if file is uploaded
-      image = req.file.path; // This should be the path of the uploaded image
+      image = req.file.path;
     }
 
     const tagArray = tags.split(',').map((tag) => tag.trim());
@@ -185,15 +180,12 @@ const formatTimeDifference = (createdAt) => {
   const currentTime = new Date();
   const timeDifference = currentTime - createdAt;
 
-  // Convert milliseconds to hours
   const hoursDifference = Math.floor(timeDifference / (1000 * 60 * 60));
 
   if (hoursDifference < 1) {
-    // If less than an hour, show minutes
     const minutesDifference = Math.floor(timeDifference / (1000 * 60));
     return `${minutesDifference} minutes ago`;
   } else {
-    // Otherwise, show hours
     return `${hoursDifference} hours ago`;
   }
 };
@@ -242,7 +234,6 @@ const getBlogBySlug = async (req, res) => {
     const isOwner =
       req.user && req.user._id.toString() === blog.author._id.toString();
 
-    // Format timestamps for comments and replies
     const formattedBlog = {
       ...blog.toObject(),
       comments: blog.comments.map((comment) => ({
@@ -319,10 +310,8 @@ const updateBlog = async (req, res) => {
     if (category) updateData.category = category;
     if (tags) updateData.tags = tags.split(',').map((tag) => tag.trim());
 
-    // Remove old image if requested or if a new one is uploaded
     if (removeImage === 'true' || req.file) {
       if (blog.image) {
-        // Extract public ID from Cloudinary URL
         const publicId = blog.image.split('/').pop().split('.')[0];
         await cloudinary.uploader.destroy(
           `blog-folder/blog-images/${publicId}`
@@ -331,7 +320,6 @@ const updateBlog = async (req, res) => {
       }
     }
 
-    // Set new image if uploaded
     if (req.file) {
       updateData.image = req.file.path;
     }
@@ -388,7 +376,6 @@ const addReactionToBlog = async (req, res) => {
     const { slug } = req.params;
     const userId = req.user._id;
 
-    // Find the blog by slug
     const blog = await Blog.findOne({ slug });
 
     if (!blog) {
@@ -398,7 +385,6 @@ const addReactionToBlog = async (req, res) => {
       });
     }
 
-    // Check if the user has already reacted with the opposite reactionType
     const oppositeReactionType =
       reactionType === 'likes' ? 'dislikes' : 'likes';
     if (blog.reactions[oppositeReactionType].includes(userId)) {
@@ -407,14 +393,11 @@ const addReactionToBlog = async (req, res) => {
       ].filter((id) => id.toString() !== userId.toString());
     }
 
-    // Check if the user has already reacted with the same reactionType
     if (blog.reactions[reactionType].includes(userId)) {
-      // If the user has already reacted, remove their reaction
       blog.reactions[reactionType] = blog.reactions[reactionType].filter(
         (id) => id.toString() !== userId.toString()
       );
     } else {
-      // If the user hasn't reacted, add their reaction
       blog.reactions[reactionType].push(userId);
     }
 
@@ -447,7 +430,6 @@ const addCommentToBlog = async (req, res) => {
     const { blogId } = req.params;
     const authorId = req.user._id;
 
-    // Fetch the full author information
     const author = await User.findById(authorId);
 
     if (!author) {
@@ -500,10 +482,9 @@ const addCommentToBlog = async (req, res) => {
 
 const editComment = async (req, res) => {
   try {
-    const { commentId } = req.params; // Retrieve the comment ID from request parameters
-    const { content } = req.body; // Retrieve the updated content from request body
+    const { commentId } = req.params;
+    const { content } = req.body;
 
-    // Find the comment to update
     const comment = await Comment.findById(commentId);
 
     if (!comment) {
@@ -513,11 +494,9 @@ const editComment = async (req, res) => {
       });
     }
 
-    // Update the comment content
     comment.content = content;
     await comment.save();
 
-    // Fetch the associated blog post
     const blog = await Blog.findOne({ comments: commentId });
 
     if (!blog) {
@@ -547,7 +526,6 @@ const editComment = async (req, res) => {
 
 const getEditComment = async (req, res) => {
   try {
-    // Retrieve the comment from the database or wherever it's stored
     const commentId = req.params.commentId;
     const comment = await Comment.findById(commentId);
 
@@ -588,10 +566,8 @@ const deleteComment = async (req, res) => {
   try {
     const { commentId } = req.params;
 
-    // Find and delete the comment by its ID
     await Comment.findByIdAndDelete(commentId);
 
-    // Fetch the associated blog post
     const blog = await Blog.findOneAndUpdate(
       { comments: commentId },
       { $pull: { comments: commentId } },
@@ -630,24 +606,19 @@ const addReactionToComment = async (req, res) => {
       });
     }
 
-    // Check if the user has already reacted with the opposite reactionType
     const oppositeReactionType =
       reactionType === 'likes' ? 'dislikes' : 'likes';
     if (comment.reactions[oppositeReactionType].includes(userId)) {
-      // Remove the user from the opposite reaction array
       comment.reactions[oppositeReactionType] = comment.reactions[
         oppositeReactionType
       ].filter((id) => id.toString() !== userId.toString());
     }
 
-    // Check if the user has already reacted with the same reactionType
     if (comment.reactions[reactionType].includes(userId)) {
-      // If the user has already reacted, remove their reaction
       comment.reactions[reactionType] = comment.reactions[reactionType].filter(
         (id) => id.toString() !== userId.toString()
       );
     } else {
-      // If the user hasn't reacted, add their reaction
       comment.reactions[reactionType].push(userId);
     }
 
@@ -681,7 +652,6 @@ const replyToComment = async (req, res) => {
     const { commentId } = req.params;
     const authorId = req.user._id;
 
-    // Fetch the full author information
     const author = await User.findById(authorId);
 
     if (!author) {
@@ -702,7 +672,6 @@ const replyToComment = async (req, res) => {
 
     await reply.save();
 
-    // Find the parent comment and push the reply to its replies array
     const parentComment = await Comment.findById(commentId);
     if (!parentComment) {
       return res.status(404).json({
@@ -714,7 +683,6 @@ const replyToComment = async (req, res) => {
     parentComment.replies.push(reply._id);
     await parentComment.save();
 
-    // Find the parent blog associated with the comment
     const parentBlog = await Blog.findOne({ comments: commentId });
     if (!parentBlog) {
       return res.status(404).json({
@@ -746,7 +714,7 @@ const getEditReply = async (req, res) => {
   try {
     const { commentId, replyId } = req.params;
     const reply = await Comment.findById(replyId);
-    const comment = await Comment.findById(commentId); // Retrieve the comment object
+    const comment = await Comment.findById(commentId);
     const blog = await Blog.findOne({ comments: commentId });
 
     if (!reply) {
@@ -790,46 +758,29 @@ const getEditReply = async (req, res) => {
 
 const updateReply = async (req, res) => {
   try {
-    const { replyId } = req.params; // Extract the reply ID from the request parameters
-    const { content } = req.body; // Extract the updated content from the request body
+    const { replyId } = req.params;
+    const { content } = req.body;
 
-    console.log('Reply ID:', replyId);
-    console.log('Updated content:', content);
-
-    // Find the reply in the database by its ID
     const reply = await Comment.findById(replyId);
 
-    console.log('Reply found:', reply);
-
-    // Check if the reply exists
     if (!reply) {
-      // If the reply doesn't exist, return error
-      console.log('Reply not found');
       return res.status(404).json({
         success: false,
         message: 'Reply not found',
       });
     }
 
-    // Check if the authenticated user is the author of the reply
     if (req.user._id.toString() !== reply.author._id.toString()) {
-      // If the user is not the author, return error
-      console.log('User not authorized to edit this reply');
       return res.status(403).json({
         success: false,
         message: 'You are not authorized to edit this reply',
       });
     }
 
-    // Update the content of the reply
     reply.content = content;
 
-    console.log('Updated reply:', reply);
-
-    // Save the updated reply to the database
     await reply.save();
 
-    // Find the blog for the response
     const parentComment = await Comment.findOne({ replies: replyId });
     const blog = await Blog.findOne({ comments: parentComment._id });
 
@@ -842,7 +793,6 @@ const updateReply = async (req, res) => {
       },
     });
   } catch (error) {
-    // Handle any errors that occur during the update process
     console.error('Error updating reply:', error);
     return res.status(500).json({
       success: false,
@@ -856,13 +806,10 @@ const deleteReply = async (req, res) => {
   try {
     const { replyId, commentId } = req.params;
 
-    // Find and delete the reply by its ID
     await Comment.findByIdAndDelete(replyId);
 
-    // Update the parent comment to remove the reply reference
     await Comment.findByIdAndUpdate(commentId, { $pull: { replies: replyId } });
 
-    // Find the blog for the response
     const blog = await Blog.findOne({ comments: commentId });
 
     return res.status(200).json({
@@ -898,7 +845,6 @@ const addReactionToReply = async (req, res) => {
       });
     }
 
-    // Check if the user has already reacted with the opposite reactionType
     const oppositeReactionType =
       reactionType === 'likes' ? 'dislikes' : 'likes';
     if (reply.reactions[oppositeReactionType].includes(userId)) {
@@ -907,20 +853,16 @@ const addReactionToReply = async (req, res) => {
       ].filter((id) => id.toString() !== userId.toString());
     }
 
-    // Check if the user has already reacted with the same reactionType
     if (reply.reactions[reactionType].includes(userId)) {
-      // If the user has already reacted, remove their reaction
       reply.reactions[reactionType] = reply.reactions[reactionType].filter(
         (id) => id.toString() !== userId.toString()
       );
     } else {
-      // If the user hasn't reacted, add their reaction
       reply.reactions[reactionType].push(userId);
     }
 
     await reply.save();
 
-    // Find the parent comment and blog for the response
     const parentComment = await Comment.findOne({ replies: replyId });
     const blog = await Blog.findOne({ comments: parentComment._id });
 
