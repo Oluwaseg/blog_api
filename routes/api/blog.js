@@ -9,7 +9,18 @@ const { blogUpload } = require('../../middleware/image.config');
 const express = require('express');
 const router = express.Router();
 
-// Define CRUD routes
+// Home route for public landing page to get all blogs
+router.get('/home', authenticatePublic, async (req, res) => {
+  try {
+    const blogData = await blogController.getAllBlogs(req, res);
+    res.json(blogData);
+  } catch (error) {
+    console.error('Error getting blogs:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+//! Blog endpoints
 router.get('/', authenticate, async (req, res) => {
   try {
     await blogController.getAllBlogs(req, res);
@@ -37,66 +48,6 @@ router.post(
   blogController.createBlog
 );
 
-router.post(
-  '/:blogId/comment',
-  authenticate,
-  checkSessionExpiration,
-  blogController.addCommentToBlog
-);
-
-router.delete(
-  '/:id',
-  authenticate,
-  checkSessionExpiration,
-  blogController.deleteBlog
-);
-
-router.delete(
-  '/comment/:commentId',
-  authenticate,
-  checkSessionExpiration,
-  blogController.deleteComment
-);
-
-router.delete(
-  '/:slug/comment/:commentId/delete-reply/:replyId',
-  authenticate,
-  checkSessionExpiration,
-  blogController.deleteReply
-);
-
-router.post('/:commentId/edit', blogController.editComment);
-
-router.post(
-  '/:slug/comment/:commentId/react',
-  authenticate,
-  checkSessionExpiration,
-  blogController.addReactionToComment
-);
-
-router.post(
-  '/:slug/react',
-  authenticate,
-  checkSessionExpiration,
-  blogController.addReactionToBlog
-);
-
-router.post(
-  '/:slug/comment/:commentId/edit-reply/:replyId',
-  authenticate,
-  checkSessionExpiration,
-  blogController.updateReply
-);
-
-router.post(
-  '/comment/:commentId/reply',
-  authenticate,
-  checkSessionExpiration,
-  blogController.replyToComment
-);
-
-router.get('/edit-comment/:commentId', blogController.getEditComment);
-
 router.get('/:slug', authenticatePublic, blogController.getBlogBySlug);
 
 router.get(
@@ -114,11 +65,66 @@ router.put(
   blogController.updateBlog
 );
 
-router.post(
-  '/reply/:replyId/react',
+router.delete(
+  '/:id',
   authenticate,
   checkSessionExpiration,
-  blogController.addReactionToReply
+  blogController.deleteBlog
+);
+
+router.post(
+  '/:slug/react',
+  authenticate,
+  checkSessionExpiration,
+  blogController.addReactionToBlog
+);
+
+//! Comment endpoints
+router.post(
+  '/:blogId/comment',
+  authenticate,
+  checkSessionExpiration,
+  blogController.addCommentToBlog
+);
+
+router.delete(
+  '/comment/:commentId',
+  authenticate,
+  checkSessionExpiration,
+  blogController.deleteComment
+);
+
+router.post('/:commentId/edit', blogController.editComment);
+
+router.get('/edit-comment/:commentId', blogController.getEditComment);
+
+router.post(
+  '/:slug/comment/:commentId/react',
+  authenticate,
+  checkSessionExpiration,
+  blogController.addReactionToComment
+);
+
+//! Reply endpoints
+router.post(
+  '/comment/:commentId/reply',
+  authenticate,
+  checkSessionExpiration,
+  blogController.replyToComment
+);
+
+router.post(
+  '/:slug/comment/:commentId/edit-reply/:replyId',
+  authenticate,
+  checkSessionExpiration,
+  blogController.updateReply
+);
+
+router.delete(
+  '/:slug/comment/:commentId/delete-reply/:replyId',
+  authenticate,
+  checkSessionExpiration,
+  blogController.deleteReply
 );
 
 router.get(
@@ -126,6 +132,13 @@ router.get(
   authenticate,
   checkSessionExpiration,
   blogController.getEditReply
+);
+
+router.post(
+  '/reply/:replyId/react',
+  authenticate,
+  checkSessionExpiration,
+  blogController.addReactionToReply
 );
 
 module.exports = router;

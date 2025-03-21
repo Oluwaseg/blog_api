@@ -14,6 +14,17 @@ require('dotenv').config();
 
 const secretKey = process.env.JWT_SECRET;
 const router = express.Router();
+const baseURL = process.env.BASE_URL;
+
+//! Helper Functions
+// Token creation helper
+const createToken = (user) => {
+  return jwt.sign(
+    { userId: user._id, email: user.email, name: user.name, image: user.image },
+    secretKey,
+    { expiresIn: '30m' }
+  );
+};
 
 // Middleware to clear user session
 const clearSession = (req, res, next) => {
@@ -21,9 +32,7 @@ const clearSession = (req, res, next) => {
   next();
 };
 
-const baseURL = process.env.BASE_URL;
-
-// Passport setup
+//! Passport Configuration
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });
@@ -80,22 +89,13 @@ passport.use(
 router.use(passport.initialize());
 router.use(passport.session());
 
-// Google OAuth authentication route
+//! OAuth Authentication Routes
 router.get(
   '/auth/google',
   clearSession,
   passport.authenticate('google', { scope: ['email', 'profile'] })
 );
 
-const createToken = (user) => {
-  return jwt.sign(
-    { userId: user._id, email: user.email, name: user.name, image: user.image },
-    secretKey,
-    { expiresIn: '30m' }
-  );
-};
-
-// Google OAuth callback route
 router.get(
   '/auth/google/callback',
   passport.authenticate('google', {
@@ -113,32 +113,23 @@ router.get(
   }
 );
 
-// Authentication routes
+//! User Authentication Routes
 router.post('/register', upload.single('image'), authController.registerUser);
 router.post('/login', authController.loginUser);
 router.post('/logout', authController.logoutUser);
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
-router.post('/resend-verification', async (req, res) => {
-  const { email } = req.body;
-  const result = await authController.resendVerificationEmail(email);
-  res.json(result);
-});
-router.post('/update-password', authenticate, authController.updatePassword);
-router.post(
-  '/change-profile-picture',
-  authenticate,
-  upload.single('image'),
-  authController.changeProfilePicture
-);
-router.post(
-  '/update-details',
-  authenticate,
-  checkSessionExpiration,
-  authController.updateUserDetails
-);
+router.post('/verify-email', authController.verifyEmail);
+router.post('/resend-verification', authController.resendVerificationEmail);
 
-router.get('/verify-email', verifyEmail);
+// Comment out routes that reference functions moved to profile controller
+/*
+router.post('/update-password', authenticate, authController.updatePassword);
+router.post('/change-profile-picture', authenticate, upload.single('image'), authController.changeProfilePicture);
+router.post('/update-details', authenticate, checkSessionExpiration, authController.updateUserDetails);
+*/
+
+// Get user image URL
 router.get('/getImageUrl', authenticate, (req, res) => {
   res.json({ imageUrl: req.user.image });
 });

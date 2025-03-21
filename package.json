@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "nodemon app.js"
+    "start": "nodemon server.js",
+    "dev": "nodemon server.js",
+    "prod": "node server.js"
   },
   "dependencies": {
     "autoprefixer": "^10.4.21",
@@ -21,6 +23,7 @@
     "express-session": "^1.18.1",
     "helmet": "^8.0.0",
     "http-errors": "~2.0.0",
+    "joi": "^17.13.3",
     "jsdom": "^26.0.0",
     "jsonwebtoken": "^9.0.2",
     "method-override": "^3.0.0",
