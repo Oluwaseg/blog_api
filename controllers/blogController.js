@@ -4,6 +4,7 @@ const dompurify = require('dompurify');
 const { window } = new JSDOM('');
 const { sanitize } = dompurify(window);
 const cloudinary = require('cloudinary').v2;
+const { invalidateBlogCaches } = require('../utils/cacheHelper');
 
 // ! BLOG CRUD LOGIC
 
@@ -89,7 +90,7 @@ const getBlogsGroupedByCategory = async () => {
   }
 };
 
-const getRandomBlogsByCategory = async (currentCategory) => {
+const getRandomBlogsByCategory = async currentCategory => {
   try {
     const categories = await Blog.distinct('category');
     const blogsByCategory = {};
@@ -147,7 +148,7 @@ const createBlog = async (req, res) => {
       image = req.file.path;
     }
 
-    const tagArray = tags.split(',').map((tag) => tag.trim());
+    const tagArray = tags.split(',').map(tag => tag.trim());
 
     const blog = new Blog({
       title,
@@ -160,6 +161,9 @@ const createBlog = async (req, res) => {
     });
 
     await blog.save();
+
+    // Invalidate cache after creating a new blog
+    await invalidateBlogCaches();
 
     return res.status(201).json({
       success: true,
@@ -176,7 +180,7 @@ const createBlog = async (req, res) => {
   }
 };
 
-const formatTimeDifference = (createdAt) => {
+const formatTimeDifference = createdAt => {
   const currentTime = new Date();
   const timeDifference = currentTime - createdAt;
 
@@ -236,10 +240,10 @@ const getBlogBySlug = async (req, res) => {
 
     const formattedBlog = {
       ...blog.toObject(),
-      comments: blog.comments.map((comment) => ({
+      comments: blog.comments.map(comment => ({
         ...comment.toObject(),
         formattedTime: formatTimeDifference(comment.createdAt),
-        replies: comment.replies.map((reply) => ({
+        replies: comment.replies.map(reply => ({
           ...reply.toObject(),
           formattedTime: formatTimeDifference(reply.createdAt),
         })),
@@ -308,7 +312,7 @@ const updateBlog = async (req, res) => {
     if (description) updateData.description = description;
     if (content) updateData.content = sanitize(content);
     if (category) updateData.category = category;
-    if (tags) updateData.tags = tags.split(',').map((tag) => tag.trim());
+    if (tags) updateData.tags = tags.split(',').map(tag => tag.trim());
 
     if (removeImage === 'true' || req.file) {
       if (blog.image) {
@@ -329,6 +333,9 @@ const updateBlog = async (req, res) => {
       updateData,
       { new: true }
     );
+
+    // Invalidate cache after updating blog
+    await invalidateBlogCaches(req.params.slug);
 
     return res.status(200).json({
       success: true,
@@ -355,6 +362,9 @@ const deleteBlog = async (req, res) => {
         message: 'Blog Not Found',
       });
     }
+
+    // Invalidate cache after deleting blog
+    await invalidateBlogCaches(blog.slug);
 
     return res.status(200).json({
       success: true,
@@ -390,12 +400,12 @@ const addReactionToBlog = async (req, res) => {
     if (blog.reactions[oppositeReactionType].includes(userId)) {
       blog.reactions[oppositeReactionType] = blog.reactions[
         oppositeReactionType
-      ].filter((id) => id.toString() !== userId.toString());
+      ].filter(id => id.toString() !== userId.toString());
     }
 
     if (blog.reactions[reactionType].includes(userId)) {
       blog.reactions[reactionType] = blog.reactions[reactionType].filter(
-        (id) => id.toString() !== userId.toString()
+        id => id.toString() !== userId.toString()
       );
     } else {
       blog.reactions[reactionType].push(userId);
@@ -611,12 +621,12 @@ const addReactionToComment = async (req, res) => {
     if (comment.reactions[oppositeReactionType].includes(userId)) {
       comment.reactions[oppositeReactionType] = comment.reactions[
         oppositeReactionType
-      ].filter((id) => id.toString() !== userId.toString());
+      ].filter(id => id.toString() !== userId.toString());
     }
 
     if (comment.reactions[reactionType].includes(userId)) {
       comment.reactions[reactionType] = comment.reactions[reactionType].filter(
-        (id) => id.toString() !== userId.toString()
+        id => id.toString() !== userId.toString()
       );
     } else {
       comment.reactions[reactionType].push(userId);
@@ -850,12 +860,12 @@ const addReactionToReply = async (req, res) => {
     if (reply.reactions[oppositeReactionType].includes(userId)) {
       reply.reactions[oppositeReactionType] = reply.reactions[
         oppositeReactionType
-      ].filter((id) => id.toString() !== userId.toString());
+      ].filter(id => id.toString() !== userId.toString());
     }
 
     if (reply.reactions[reactionType].includes(userId)) {
       reply.reactions[reactionType] = reply.reactions[reactionType].filter(
-        (id) => id.toString() !== userId.toString()
+        id => id.toString() !== userId.toString()
       );
     } else {
       reply.reactions[reactionType].push(userId);

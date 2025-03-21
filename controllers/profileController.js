@@ -53,6 +53,8 @@ const getUserProfile = async (req, res) => {
  */
 const updateUserDetails = async (req, res) => {
   try {
+    console.log('Received update user details request:', req.body);
+
     const {
       username,
       name,
@@ -66,6 +68,7 @@ const updateUserDetails = async (req, res) => {
     } = req.body;
 
     const userId = req.user._id;
+    console.log('User ID:', userId);
 
     // Initialize update data object
     const updateData = {};
@@ -111,8 +114,11 @@ const updateUserDetails = async (req, res) => {
     // Update last active timestamp
     updateData.lastActive = new Date();
 
+    console.log('Update data prepared:', updateData);
+
     // Validate if there's anything to update
     if (Object.keys(updateData).length === 0) {
+      console.log('Error: No valid fields provided for update');
       return sendError(
         res,
         statusCodes.BAD_REQUEST,
@@ -121,14 +127,20 @@ const updateUserDetails = async (req, res) => {
     }
 
     // Check if username already exists
-    if (username && (await isUsernameTaken(username, userId))) {
-      return sendError(res, statusCodes.CONFLICT, 'Username already exists');
+    if (username) {
+      const isTaken = await isUsernameTaken(username, userId);
+      console.log('Username check:', { username, isTaken });
+      if (isTaken) {
+        return sendError(res, statusCodes.CONFLICT, 'Username already exists');
+      }
     }
 
     // Update user details
+    console.log('Attempting to update user profile with data:', updateData);
     const updatedUser = await updateUserProfile(userId, updateData);
 
     if (!updatedUser) {
+      console.log('Error: User not found when trying to update');
       return sendError(res, statusCodes.NOT_FOUND, 'User not found');
     }
 

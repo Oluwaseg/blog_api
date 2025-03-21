@@ -1,8 +1,8 @@
-require("dotenv").config();
+require('dotenv').config();
 
-const cloudinary = require("cloudinary").v2;
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
-const multer = require("multer");
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const multer = require('multer');
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -14,11 +14,11 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: "blog-folder/profile/images",
-    allowed_formats: ["jpg", "jpeg", "png"],
-    transformation: [{ width: 500, height: 500, crop: "limit" }],
+    folder: 'blog-folder/profile/images',
+    allowed_formats: ['jpg', 'jpeg', 'png'],
+    transformation: [{ width: 500, height: 500, crop: 'limit' }],
     unique_filename: true,
-    resource_type: "image",
+    resource_type: 'image',
   },
 });
 
@@ -27,11 +27,11 @@ const upload = multer({ storage: storage });
 const blogStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: "blog-folder/blog-images/", // Change the folder name to where you want to store blog images
-    allowed_formats: ["jpg", "jpeg", "png"],
-    transformation: [{ width: 800, height: 600, crop: "limit" }], // Adjust transformation options as needed
+    folder: 'blog-folder/blog-images/', // Change the folder name to where you want to store blog images
+    allowed_formats: ['jpg', 'jpeg', 'png'],
+    transformation: [{ width: 800, height: 600, crop: 'limit' }], // Adjust transformation options as needed
     unique_filename: true,
-    resource_type: "image",
+    resource_type: 'image',
   },
 });
 

@@ -46,7 +46,7 @@ const getAllUsers = async (req, res) => {
     const totalPages = Math.ceil(totalUsers / limit);
 
     // Format user responses
-    const formattedUsers = users.map((user) => formatUserResponse(user, true));
+    const formattedUsers = users.map(user => formatUserResponse(user, true));
 
     // Send success response with pagination info
     return sendSuccess(res, statusCodes.OK, null, {

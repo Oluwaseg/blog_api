@@ -8,7 +8,7 @@ require('dotenv').config();
  * @param {Object} user - User object
  * @returns {string} JWT token
  */
-const createToken = (user) => {
+const createToken = user => {
   const tokenData = {
     userId: user._id,
     email: user.email,
@@ -28,7 +28,7 @@ const createToken = (user) => {
  * @param {Object} user - User object
  * @returns {string} Reset token
  */
-const createPasswordResetToken = (user) => {
+const createPasswordResetToken = user => {
   return jwt.sign(
     { email: user.email, userId: user._id },
     process.env.RESET_PASSWORD_SECRET,
@@ -49,7 +49,7 @@ const generateVerificationToken = () => {
  * @param {string} password - Plain text password
  * @returns {Promise<string>} Hashed password
  */
-const hashPassword = async (password) => {
+const hashPassword = async password => {
   return await bcrypt.hash(password, 10);
 };
 

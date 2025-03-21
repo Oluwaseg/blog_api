@@ -5,12 +5,17 @@ const {
   authenticatePublic,
 } = require('../../middleware/authenticate');
 const { blogUpload } = require('../../middleware/image.config');
+const {
+  homepageCache,
+  blogCache,
+  categoryCache,
+} = require('../../middleware/cache');
 
 const express = require('express');
 const router = express.Router();
 
 // Home route for public landing page to get all blogs
-router.get('/home', authenticatePublic, async (req, res) => {
+router.get('/home', authenticatePublic, homepageCache, async (req, res) => {
   try {
     const blogData = await blogController.getAllBlogs(req, res);
     res.json(blogData);
@@ -21,7 +26,7 @@ router.get('/home', authenticatePublic, async (req, res) => {
 });
 
 //! Blog endpoints
-router.get('/', authenticate, async (req, res) => {
+router.get('/', authenticate, homepageCache, async (req, res) => {
   try {
     await blogController.getAllBlogs(req, res);
   } catch (error) {
@@ -30,15 +35,20 @@ router.get('/', authenticate, async (req, res) => {
   }
 });
 
-router.get('/categories', authenticatePublic, async (req, res) => {
-  try {
-    let blogsByCategory = await blogController.getBlogsGroupedByCategory();
-    res.json({ blogsByCategory });
-  } catch (error) {
-    console.error('Error getting blogs:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+router.get(
+  '/categories',
+  authenticatePublic,
+  categoryCache,
+  async (req, res) => {
+    try {
+      let blogsByCategory = await blogController.getBlogsGroupedByCategory();
+      res.json({ blogsByCategory });
+    } catch (error) {
+      console.error('Error getting blogs:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
   }
-});
+);
 
 router.post(
   '/create',
@@ -48,7 +58,12 @@ router.post(
   blogController.createBlog
 );
 
-router.get('/:slug', authenticatePublic, blogController.getBlogBySlug);
+router.get(
+  '/:slug',
+  authenticatePublic,
+  blogCache,
+  blogController.getBlogBySlug
+);
 
 router.get(
   '/:slug/edit',

@@ -1,9 +1,5 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
-const crypto = require('crypto');
-const { JSDOM } = require('jsdom');
-const createDOMPurifier = require('dompurify');
-const htmlPurify = createDOMPurifier(new JSDOM().window);
 
 const schema = new mongoose.Schema({
   name: {

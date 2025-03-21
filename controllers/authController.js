@@ -320,7 +320,7 @@ const resetPassword = async (req, res) => {
 
 const verifyEmail = async (req, res) => {
   try {
-    const { token } = req.body;
+    const token = req.query.token || req.body.token;
 
     if (!token) {
       return sendError(
@@ -362,6 +362,25 @@ const verifyEmail = async (req, res) => {
   }
 };
 
+/**
+ * Verify if a token is valid
+ * @route GET /api/auth/verify
+ */
+const verifyToken = async (req, res) => {
+  try {
+    // If middleware authenticated successfully, token is valid
+    // Just return a simple response with authenticated: true
+    return res.status(200).json({
+      authenticated: true,
+    });
+  } catch (error) {
+    console.error('Token verification error:', error);
+    return res.status(401).json({
+      authenticated: false,
+    });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -370,4 +389,5 @@ module.exports = {
   resetPassword,
   verifyEmail,
   resendVerificationEmail,
+  verifyToken,
 };

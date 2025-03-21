@@ -8,7 +8,7 @@ const connectDB = async () => {
     console.log('Connected to UserDB');
   } catch (err) {
     console.error('MongoDB Connection Error:', err);
-    process.exit(1);
+    throw new Error('Failed to connect to MongoDB. Server cannot start.');
   }
 };
 

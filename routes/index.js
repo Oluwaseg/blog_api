@@ -9,7 +9,7 @@ const socialRouter = require('./socialRoutes');
  * Configure API v1 routes
  * @param {Express.Router} router - Express router instance
  */
-const configureApiV1Routes = (router) => {
+const configureApiV1Routes = router => {
   // Authentication routes (without /api prefix as it's in the main path)
   router.use('/', authRouter);
 
@@ -17,7 +17,7 @@ const configureApiV1Routes = (router) => {
   router.use('/blogs', blogRouter);
 
   // User management routes
-  router.use('/profile', profileRouter);
+  router.use('/user/profile', profileRouter);
 
   // Admin routes
   router.use('/admin', adminRouter);
@@ -30,7 +30,7 @@ const configureApiV1Routes = (router) => {
  * Configure and register all application routes
  * @param {Express} app - Express application instance
  */
-const configureRoutes = (app) => {
+const configureRoutes = app => {
   // API v1 routes
   const apiRouter = express.Router();
   configureApiV1Routes(apiRouter);

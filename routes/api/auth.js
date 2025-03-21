@@ -4,11 +4,7 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const { User } = require('../../models/model');
 const jwt = require('jsonwebtoken');
 const authController = require('../../controllers/authController');
-const {
-  authenticate,
-  checkSessionExpiration,
-  verifyEmail,
-} = require('../../middleware/authenticate');
+const { authenticate } = require('../../middleware/authenticate');
 const { upload } = require('../../middleware/image.config');
 require('dotenv').config();
 
@@ -18,7 +14,7 @@ const baseURL = process.env.BASE_URL;
 
 //! Helper Functions
 // Token creation helper
-const createToken = (user) => {
+const createToken = user => {
   return jwt.sign(
     { userId: user._id, email: user.email, name: user.name, image: user.image },
     secretKey,
@@ -119,8 +115,13 @@ router.post('/login', authController.loginUser);
 router.post('/logout', authController.logoutUser);
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
+// Support both GET and POST for email verification
+router.get('/verify-email', authController.verifyEmail);
 router.post('/verify-email', authController.verifyEmail);
 router.post('/resend-verification', authController.resendVerificationEmail);
+
+// Token verification endpoint
+router.get('/verify', authenticate, authController.verifyToken);
 
 // Comment out routes that reference functions moved to profile controller
 /*

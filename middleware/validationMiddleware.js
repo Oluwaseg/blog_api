@@ -19,7 +19,7 @@ const validate = (schema, property = 'body') => {
       return next();
     }
 
-    const errorMessages = error.details.map((detail) => detail.message);
+    const errorMessages = error.details.map(detail => detail.message);
     return sendError(res, statusCodes.BAD_REQUEST, 'Validation error', {
       errors: errorMessages,
     });
@@ -57,32 +57,32 @@ const authValidation = {
 // Validation schemas for profile routes
 const profileValidation = {
   updateDetails: Joi.object({
-    username: Joi.string().alphanum().min(3).max(30),
-    name: Joi.string().max(100),
-    bio: Joi.string().max(500),
-    dob: Joi.date().iso(),
-    profession: Joi.string().max(100),
-    interests: Joi.array().items(Joi.string()),
+    username: Joi.string().alphanum().min(3).max(30).optional(),
+    name: Joi.string().max(100).optional(),
+    bio: Joi.string().max(500).allow('').optional(),
+    dob: Joi.date().iso().optional().allow(null),
+    profession: Joi.string().max(100).optional().allow(''),
+    interests: Joi.array().items(Joi.string()).optional(),
     contact: Joi.object({
-      phone: Joi.string().max(20),
-      alternateEmail: Joi.string().email(),
-      website: Joi.string().uri(),
-    }),
+      phone: Joi.string().max(20).optional().allow(''),
+      alternateEmail: Joi.string().email().optional().allow(''),
+      website: Joi.string().uri().optional().allow(''),
+    }).optional(),
     address: Joi.object({
-      street: Joi.string().max(100),
-      city: Joi.string().max(50),
-      state: Joi.string().max(50),
-      country: Joi.string().max(50),
-      postalCode: Joi.string().max(20),
-    }),
+      street: Joi.string().max(100).optional().allow(''),
+      city: Joi.string().max(50).optional().allow(''),
+      state: Joi.string().max(50).optional().allow(''),
+      country: Joi.string().max(50).optional().allow(''),
+      postalCode: Joi.string().max(20).optional().allow(''),
+    }).optional(),
     social: Joi.object({
-      github: Joi.string().uri(),
-      twitter: Joi.string().uri(),
-      linkedin: Joi.string().uri(),
-      facebook: Joi.string().uri(),
-      instagram: Joi.string().uri(),
-    }),
-  }),
+      github: Joi.string().uri().optional().allow(''),
+      twitter: Joi.string().uri().optional().allow(''),
+      linkedin: Joi.string().uri().optional().allow(''),
+      facebook: Joi.string().uri().optional().allow(''),
+      instagram: Joi.string().uri().optional().allow(''),
+    }).optional(),
+  }).min(1),
 
   updatePassword: Joi.object({
     currentPassword: Joi.string().required(),

@@ -1,15 +1,22 @@
 require('dotenv').config();
 const express = require('express');
-const { authenticatePublic } = require('./middleware/authenticate');
-const blogController = require('./controllers/blogController');
 const configureRoutes = require('./routes');
 const { configureMiddleware, configureErrorHandlers } = require('./middleware');
 const connectDB = require('./connection/db');
+const { connectRedis } = require('./utils/redisClient');
 
 const app = express();
 
 // Connect to database
 connectDB();
+
+// Connect to Redis
+connectRedis().catch(err => {
+  console.warn(
+    'Redis connection failed, continuing without caching:',
+    err.message
+  );
+});
 
 // Configure middleware
 configureMiddleware(app);

@@ -9,7 +9,7 @@ const {
  * @param {string} email - User's email
  * @returns {Promise<Object>} User document
  */
-const findUserByEmail = async (email) => {
+const findUserByEmail = async email => {
   return await User.findOne({ email });
 };
 
@@ -18,7 +18,7 @@ const findUserByEmail = async (email) => {
  * @param {string} id - User's ID
  * @returns {Promise<Object>} User document
  */
-const findUserById = async (id) => {
+const findUserById = async id => {
   return await User.findById(id);
 };
 
@@ -27,7 +27,7 @@ const findUserById = async (id) => {
  * @param {Object} userData - User data
  * @returns {Promise<Object>} New user document
  */
-const createUser = async (userData) => {
+const createUser = async userData => {
   const { name, email, password, image } = userData;
 
   // Hash password
@@ -62,7 +62,9 @@ const isUsernameTaken = async (username, userId = null) => {
     query._id = { $ne: userId };
   }
 
+  console.log('Checking if username is taken with query:', query);
   const existingUser = await User.findOne(query);
+  console.log('Username check result:', !!existingUser);
   return !!existingUser;
 };
 
@@ -73,12 +75,19 @@ const isUsernameTaken = async (username, userId = null) => {
  * @returns {Promise<Object>} Updated user document
  */
 const updateUserProfile = async (userId, updateData) => {
-  const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
-    new: true,
-    runValidators: true,
-  });
-
-  return updatedUser;
+  console.log('Updating user profile for ID:', userId);
+  console.log('Update data:', JSON.stringify(updateData));
+  try {
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+      new: true,
+      runValidators: true,
+    });
+    console.log('Update result:', updatedUser ? 'Success' : 'User not found');
+    return updatedUser;
+  } catch (error) {
+    console.error('Error in updateUserProfile:', error);
+    throw error;
+  }
 };
 
 /**
@@ -114,7 +123,7 @@ const findUserByResetToken = async (email, token) => {
  * @param {Object} user - User document
  * @returns {Promise<Object>} Updated user document
  */
-const verifyUser = async (user) => {
+const verifyUser = async user => {
   user.isVerified = true;
   user.verificationToken = null;
   await user.save();
@@ -126,7 +135,7 @@ const verifyUser = async (user) => {
  * @param {string} userId - User ID
  * @returns {Promise<Object>} Updated user
  */
-const updateLastActive = async (userId) => {
+const updateLastActive = async userId => {
   const user = await User.findById(userId);
   if (user) {
     user.lastActive = new Date();

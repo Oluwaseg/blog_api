@@ -39,7 +39,7 @@ const errorHandler = (err, req, res, next) => {
   if (err.name === 'ValidationError') {
     statusCode = statusCodes.BAD_REQUEST;
     message = 'Validation error';
-    errors = Object.values(err.errors).map((e) => e.message);
+    errors = Object.values(err.errors).map(e => e.message);
   }
 
   // Handle Cast errors (invalid ID format etc.)

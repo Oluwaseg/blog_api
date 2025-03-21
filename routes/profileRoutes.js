@@ -31,7 +31,7 @@ router.put(
 router.put(
   '/picture',
   protect,
-  upload.single('profileImage'),
+  upload.single('image'),
   profileController.changeProfilePicture
 );
 

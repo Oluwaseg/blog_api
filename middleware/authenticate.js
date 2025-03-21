@@ -5,7 +5,6 @@ const authenticateToken =
   (strict = true) =>
   async (req, res, next) => {
     const token = req.cookies.jwt || req.headers.authorization?.split(' ')[1];
-
     if (!token) {
       if (strict) {
         return res
@@ -54,34 +53,8 @@ const checkSessionExpiration = (req, res, next) => {
   next();
 };
 
-const verifyEmail = async (req, res) => {
-  try {
-    const token = req.query.token;
-
-    if (!token) {
-      return res.status(400).json({ error: 'Invalid token' });
-    }
-
-    const user = await User.findOne({ verificationToken: token });
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    user.verificationToken = null;
-    user.isVerified = true;
-    await user.save();
-
-    res.json({ message: 'Email successfully verified' });
-  } catch (error) {
-    console.error('Verification failed:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-};
-
 module.exports = {
   authenticate,
   checkSessionExpiration,
   authenticatePublic,
-  verifyEmail,
 };

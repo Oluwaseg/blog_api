@@ -11,7 +11,7 @@ const { notFound, errorHandler } = require('./errorMiddleware');
  * Configure and register all global middleware
  * @param {Express} app - Express application instance
  */
-const configureMiddleware = (app) => {
+const configureMiddleware = app => {
   // Basic middleware
   app.use(logger('dev'));
   app.use(cors());
@@ -46,7 +46,7 @@ const configureMiddleware = (app) => {
  * Configure error handling middleware
  * @param {Express} app - Express application instance
  */
-const configureErrorHandlers = (app) => {
+const configureErrorHandlers = app => {
   app.use(notFound);
   app.use(errorHandler);
 };

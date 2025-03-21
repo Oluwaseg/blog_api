@@ -4,7 +4,6 @@ const {
   sendError,
   statusCodes,
 } = require('../utils/responseUtils');
-const { formatUserResponse } = require('../utils/authUtils');
 
 /**
  * Follow a user
@@ -276,7 +275,7 @@ const searchUsers = async (req, res) => {
 
     // Add followedByMe field
     const currentUser = await User.findById(currentUserId);
-    const usersWithFollowStatus = users.map((user) => ({
+    const usersWithFollowStatus = users.map(user => ({
       ...user,
       followedByMe: currentUser.following.includes(user._id),
       followersCount: user.followers.length,

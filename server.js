@@ -5,7 +5,7 @@ const app = require('./app');
 /**
  * Normalize port value
  */
-const normalizePort = (val) => {
+const normalizePort = val => {
   const port = parseInt(val, 10);
   if (isNaN(port)) return val; // Named pipe
   if (port >= 0) return port; // Port number
@@ -15,19 +15,17 @@ const normalizePort = (val) => {
 /**
  * Handle specific server errors
  */
-const onError = (error) => {
+const onError = error => {
   if (error.syscall !== 'listen') throw error;
   const bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
 
   switch (error.code) {
     case 'EACCES':
       console.error(bind + ' requires elevated privileges');
-      process.exit(1);
-      break;
+      throw new Error('Elevated privileges required');
     case 'EADDRINUSE':
       console.error(bind + ' is already in use');
-      process.exit(1);
-      break;
+      throw new Error('Port already in use');
     default:
       throw error;
   }
