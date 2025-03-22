@@ -32,10 +32,20 @@ const cacheMiddleware = (prefix, keyGenerator, ttl) => {
       res.json = function (body) {
         // Only cache successful responses
         if (res.statusCode >= 200 && res.statusCode < 300) {
-          setCache(key, body, ttl).catch(error => {
-            console.error('Error setting cache:', error);
-          });
+          // Create a safe copy of the response data without circular references
+          try {
+            // Only attempt to cache if we have a valid body
+            if (body) {
+              setCache(key, body, ttl).catch(error => {
+                console.error('Error setting cache:', error);
+              });
+            }
+          } catch (error) {
+            console.error('Error preparing data for cache:', error);
+          }
         }
+
+        // Call original json method and return its result
         return originalSend.call(this, body);
       };
 

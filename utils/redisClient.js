@@ -39,7 +39,25 @@ const setCache = async (key, value, ttl = defaultTTL) => {
   if (!redisClient?.isOpen) return false;
 
   try {
-    await redisClient.set(key, JSON.stringify(value), { EX: ttl });
+    // Use a replacer function to handle circular references
+    const safeStringify = obj => {
+      const seen = new WeakSet();
+      return JSON.stringify(obj, (key, value) => {
+        // Skip properties that start with underscore (common for private/internal properties)
+        if (key.startsWith('_')) return undefined;
+
+        // Handle circular references
+        if (typeof value === 'object' && value !== null) {
+          if (seen.has(value)) {
+            return '[Circular Reference]';
+          }
+          seen.add(value);
+        }
+        return value;
+      });
+    };
+
+    await redisClient.set(key, safeStringify(value), { EX: ttl });
     return true;
   } catch (error) {
     console.error('Redis setCache error:', error);

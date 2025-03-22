@@ -17,11 +17,12 @@ const router = express.Router();
 // Home route for public landing page to get all blogs
 router.get('/guest', authenticatePublic, homepageCache, async (req, res) => {
   try {
-    const blogData = await blogController.getAllBlogs(req, res);
-    res.json(blogData);
+    await blogController.getAllBlogs(req, res);
   } catch (error) {
     console.error('Error getting blogs:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
   }
 });
 
