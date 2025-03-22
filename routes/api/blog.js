@@ -15,7 +15,7 @@ const express = require('express');
 const router = express.Router();
 
 // Home route for public landing page to get all blogs
-router.get('/home', authenticatePublic, homepageCache, async (req, res) => {
+router.get('/guest', authenticatePublic, homepageCache, async (req, res) => {
   try {
     const blogData = await blogController.getAllBlogs(req, res);
     res.json(blogData);
