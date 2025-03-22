@@ -18,7 +18,7 @@ const createToken = user => {
   };
 
   const token = jwt.sign(tokenData, process.env.JWT_SECRET, {
-    expiresIn: '1hr',
+    expiresIn: '7d',
   });
   return token;
 };

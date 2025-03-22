@@ -5,6 +5,7 @@ const { window } = new JSDOM('');
 const { sanitize } = dompurify(window);
 const cloudinary = require('cloudinary').v2;
 const { invalidateBlogCaches } = require('../utils/cacheHelper');
+const activityController = require('./activityController');
 
 // ! BLOG CRUD LOGIC
 
@@ -386,7 +387,7 @@ const addReactionToBlog = async (req, res) => {
     const { slug } = req.params;
     const userId = req.user._id;
 
-    const blog = await Blog.findOne({ slug });
+    const blog = await Blog.findOne({ slug }).populate('author');
 
     if (!blog) {
       return res.status(404).json({
@@ -403,6 +404,9 @@ const addReactionToBlog = async (req, res) => {
       ].filter(id => id.toString() !== userId.toString());
     }
 
+    // Check if this is a new like or removing an existing like
+    const isLiking = !blog.reactions[reactionType].includes(userId);
+
     if (blog.reactions[reactionType].includes(userId)) {
       blog.reactions[reactionType] = blog.reactions[reactionType].filter(
         id => id.toString() !== userId.toString()
@@ -412,6 +416,16 @@ const addReactionToBlog = async (req, res) => {
     }
 
     await blog.save();
+
+    // Create activity for a new like (but not for dislike or unlike)
+    if (isLiking && reactionType === 'likes') {
+      await activityController.createActivity({
+        user: userId,
+        recipient: blog.author._id,
+        type: 'like',
+        blogId: blog._id,
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -451,11 +465,7 @@ const addCommentToBlog = async (req, res) => {
 
     const comment = new Comment({
       content,
-      author: {
-        _id: author._id,
-        name: author.name,
-        image: author.image,
-      },
+      author: authorId,
     });
 
     await comment.save();
@@ -464,12 +474,30 @@ const addCommentToBlog = async (req, res) => {
       blogId,
       { $push: { comments: comment._id } },
       { new: true }
-    ).populate({
-      path: 'comments',
-      populate: {
-        path: 'author',
-        select: 'name image',
-      },
+    )
+      .populate('author')
+      .populate({
+        path: 'comments',
+        populate: {
+          path: 'author',
+          select: 'name image',
+        },
+      });
+
+    if (!blog) {
+      return res.status(404).json({
+        success: false,
+        message: 'Blog not found',
+      });
+    }
+
+    // Create activity for the comment
+    await activityController.createActivity({
+      user: authorId,
+      recipient: blog.author._id,
+      type: 'comment',
+      blogId: blog._id,
+      commentId: comment._id,
     });
 
     return res.status(201).json({
@@ -584,6 +612,15 @@ const deleteComment = async (req, res) => {
       { new: true }
     );
 
+    // Check if blog exists before accessing its properties
+    if (!blog) {
+      return res.status(200).json({
+        success: true,
+        message: 'Comment deleted successfully',
+        // No blog to return to, comment might have been orphaned
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Comment deleted successfully',
@@ -673,16 +710,12 @@ const replyToComment = async (req, res) => {
 
     const reply = new Comment({
       content,
-      author: {
-        _id: author._id,
-        name: author.name,
-        image: author.image,
-      },
+      author: authorId,
     });
 
     await reply.save();
 
-    const parentComment = await Comment.findById(commentId);
+    const parentComment = await Comment.findById(commentId).populate('author');
     if (!parentComment) {
       return res.status(404).json({
         success: false,
@@ -693,13 +726,25 @@ const replyToComment = async (req, res) => {
     parentComment.replies.push(reply._id);
     await parentComment.save();
 
-    const parentBlog = await Blog.findOne({ comments: commentId });
+    const parentBlog = await Blog.findOne({ comments: commentId }).populate(
+      'author'
+    );
     if (!parentBlog) {
       return res.status(404).json({
         success: false,
         message: 'Parent blog not found',
       });
     }
+
+    // Create activity for the reply
+    await activityController.createActivity({
+      user: authorId,
+      recipient: parentComment.author._id,
+      type: 'reply',
+      blogId: parentBlog._id,
+      commentId: parentComment._id,
+      replyId: reply._id,
+    });
 
     return res.status(201).json({
       success: true,

@@ -15,6 +15,9 @@ router.get('/followers', socialController.getFollowers);
 router.get('/following', socialController.getFollowing);
 router.get('/is-following/:userId', socialController.checkFollowingStatus);
 
+// Get current user's blogs
+router.get('/user/blogs', socialController.getUserBlogs);
+
 // Get suggested users to follow
 router.get('/suggestions', socialController.getSuggestedUsers);
 

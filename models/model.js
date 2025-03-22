@@ -198,4 +198,28 @@ const commentSchema = new mongoose.Schema({
 
 const Comment = mongoose.model('Comment', commentSchema);
 
-module.exports = { User, Blog, Comment };
+const activitySchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // User who performed the action
+  recipient: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  }, // User who receives the notification
+  type: {
+    type: String,
+    required: true,
+    enum: ['like', 'comment', 'follow', 'reply'],
+  },
+  blogId: { type: mongoose.Schema.Types.ObjectId, ref: 'Blog' }, // Optional: related blog
+  commentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }, // Optional: related comment
+  replyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }, // Optional: related reply
+  createdAt: { type: Date, default: Date.now },
+  read: { type: Boolean, default: false },
+});
+
+// Index to help with efficient querying of user activities
+activitySchema.index({ recipient: 1, createdAt: -1 });
+
+const Activity = mongoose.model('Activity', activitySchema);
+
+module.exports = { User, Blog, Comment, Activity };

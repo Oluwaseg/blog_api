@@ -4,6 +4,7 @@ const blogRouter = require('./api/blog');
 const profileRouter = require('./profileRoutes');
 const adminRouter = require('./adminRoutes');
 const socialRouter = require('./socialRoutes');
+const activityRouter = require('./activityRoutes');
 
 /**
  * Configure API v1 routes
@@ -24,6 +25,9 @@ const configureApiV1Routes = router => {
 
   // Social feature routes
   router.use('/social', socialRouter);
+
+  // Activity/notification routes
+  router.use('/activities', activityRouter);
 };
 
 /**

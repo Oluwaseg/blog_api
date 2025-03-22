@@ -1,9 +1,10 @@
-const { User } = require('../models/model');
+const { User, Blog } = require('../models/model');
 const {
   sendSuccess,
   sendError,
   statusCodes,
 } = require('../utils/responseUtils');
+const activityController = require('./activityController');
 
 /**
  * Follow a user
@@ -47,6 +48,13 @@ const followUser = async (req, res) => {
     // Update followers list for target user
     await User.findByIdAndUpdate(userToFollowId, {
       $push: { followers: currentUserId },
+    });
+
+    // Create activity record for the follow action
+    await activityController.createActivity({
+      user: currentUserId,
+      recipient: userToFollowId,
+      type: 'follow',
     });
 
     return sendSuccess(res, statusCodes.OK, 'User followed successfully');
@@ -200,8 +208,19 @@ const getSuggestedUsers = async (req, res) => {
       .limit(limit)
       .lean();
 
+    // Get blog counts for each suggested user
+    const suggestedUsersWithBlogs = await Promise.all(
+      suggestedUsers.map(async user => {
+        const blogCount = await Blog.countDocuments({ author: user._id });
+        return {
+          ...user,
+          blogCount,
+        };
+      })
+    );
+
     return sendSuccess(res, statusCodes.OK, null, {
-      suggestions: suggestedUsers,
+      suggestions: suggestedUsersWithBlogs,
     });
   } catch (error) {
     console.error('Error getting suggested users:', error);
@@ -296,6 +315,37 @@ const searchUsers = async (req, res) => {
   }
 };
 
+/**
+ * Get blogs authored by the currently logged-in user
+ * @route GET /api/social/user/blogs
+ */
+const getUserBlogs = async (req, res) => {
+  try {
+    const currentUserId = req.user._id;
+
+    // Get count of user's blogs
+    const blogCount = await Blog.countDocuments({ author: currentUserId });
+
+    // Get all blogs by the user
+    const blogs = await Blog.find({ author: currentUserId })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return sendSuccess(res, statusCodes.OK, null, {
+      blogs,
+      blogCount,
+    });
+  } catch (error) {
+    console.error('Error getting user blogs:', error);
+    return sendError(
+      res,
+      statusCodes.INTERNAL_SERVER_ERROR,
+      'Failed to get user blogs',
+      error
+    );
+  }
+};
+
 module.exports = {
   followUser,
   unfollowUser,
@@ -304,4 +354,5 @@ module.exports = {
   getSuggestedUsers,
   checkFollowingStatus,
   searchUsers,
+  getUserBlogs,
 };
